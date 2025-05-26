@@ -19,7 +19,6 @@
         </div>
         
         <div class="tab-content">
-            <!-- Nueva Cotización -->
             <div id="nueva-cotizacion" class="tab-panel active">
                 <form id="cotizacionForm">
                     <div class="form-grid">
@@ -106,12 +105,9 @@
     </div>
 
     <script>
-        // Array para almacenar cotizaciones obtenidas del servidor
         let cotizaciones = [];
 
-        // Cambio de pestañas
         function switchTab(tabId) {
-            // Ocultar todas las pestañas
             document.querySelectorAll('.tab-panel').forEach(panel => {
                 panel.classList.remove('active');
             });
@@ -123,7 +119,6 @@
             document.getElementById(tabId).classList.add('active');
             event.target.classList.add('active');
             
-            // Si es historial, cargar y mostrar las cotizaciones
             if (tabId === 'historial') {
                 cargarCotizaciones().then(() => {
                     mostrarHistorial();
@@ -131,7 +126,6 @@
             }
         }
 
-        // Cargar cotizaciones al iniciar la página
         window.addEventListener('load', () => {
             cargarCotizaciones();
         });
@@ -141,7 +135,6 @@
             document.getElementById('cotizacionForm').reset();
         }
 
-        // Función para mostrar mensaje de éxito
         function mostrarExito() {
             const successMsg = document.getElementById('success-message');
             successMsg.classList.remove('hidden');
@@ -150,7 +143,6 @@
             }, 3000);
         }
 
-        // Función para obtener cotizaciones del servidor
         async function cargarCotizaciones() {
             try {
                 const response = await fetch('/api/cotizaciones');
@@ -162,7 +154,6 @@
             }
         }
 
-        // Manejo del formulario
         document.getElementById('cotizacionForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -183,16 +174,12 @@
                 
                 const data = await response.json();
                 
-                // Ocultar loading
                 document.getElementById('loading').classList.add('hidden');
                 
-                // Mostrar resultados
                 mostrarCotizacion(data);
                 
-                // Actualizar lista de cotizaciones
                 await cargarCotizaciones();
                 
-                // Limpiar formulario y mostrar mensaje de éxito
                 limpiarFormulario();
                 mostrarExito();
                 
@@ -206,7 +193,6 @@
         function mostrarCotizacion(data) {
             document.getElementById('numero-cotizacion').textContent = data.numero_cotizacion;
             
-            // Información básica de la cotización
             document.getElementById('cotizacionData').innerHTML = `
                 <div class="info-grid">
                     <div class="info-item">
@@ -241,7 +227,6 @@
                 </div>
             `;
             
-            // Mostrar análisis de IA si está disponible
             if (data.analisis_ia) {
                 const analisis = data.analisis_ia;
                 let serviciosAdicionales = '';
