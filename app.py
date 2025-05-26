@@ -11,10 +11,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# 2. Configurar OpenAI inmediatamente después
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# 3. Verificación EXPLÍCITA
 if not openai.api_key:
     raise RuntimeError("""
     ERROR CRÍTICO: OpenAI API Key no configurada.
@@ -27,24 +25,20 @@ if not openai.api_key:
 # 4. Solo después inicializar FastAPI
 app = FastAPI()
 
-# Configuración de archivos estáticos y templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Precios de los servicios
 SERVICE_PRICES = {
     "Constitución de empresa": 1500,
     "Defensa laboral": 2000,
     "Consultoría tributaria": 800
 }
 
-# Conexión a la base de datos SQLite
 def get_db_connection():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-# Crear tabla si no existe
 def init_db():
     conn = get_db_connection()
     conn.execute('''
@@ -71,7 +65,6 @@ async def obtener_cotizaciones():
     ).fetchall()
     conn.close()
     
-    # Convertir Row objects a diccionarios
     result = []
     for row in cotizaciones:
         result.append({
@@ -92,7 +85,6 @@ async def read_root(request: Request):
 
 def analizar_con_ia(descripcion, tipo_servicio):
     try:
-        # Verifica que la descripción no esté vacía
         if not descripcion.strip():
             raise ValueError("Descripción vacía")
         
@@ -127,13 +119,11 @@ def analizar_con_ia(descripcion, tipo_servicio):
         # Parsear la respuesta correctamente
         content = response.choices[0].message.content
         try:
-            # Intenta extraer el JSON si la respuesta lo contiene
             json_start = content.find('{')
             json_end = content.rfind('}') + 1
             json_str = content[json_start:json_end]
             return eval(json_str)
         except:
-            # Si falla, devuelve un formato estándar con la respuesta completa
             return {
                 'complejidad': 'Media',
                 'ajuste_precio': 0,
@@ -157,23 +147,17 @@ async def generar_cotizacion(
     tipo_servicio: str = Form(...),
     descripcion: str = Form(...)
 ):
-    # Generar número de cotización único
     cotizacion_id = str(uuid.uuid4().fields[-1])[:4]
     numero_cotizacion = f"COT-{datetime.now().year}-{cotizacion_id}"
     
-    # Obtener precio base según servicio
     precio_base = SERVICE_PRICES.get(tipo_servicio, 0)
     
-    # Analizar con IA
     analisis_ia = analizar_con_ia(descripcion, tipo_servicio)
     
-    # Aplicar ajuste de precio
     precio_final = precio_base * (1 + analisis_ia['ajuste_precio'] / 100)
     
-    # Fecha actual
     fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    # Guardar en base de datos
     conn = get_db_connection()
     conn.execute(
         "INSERT INTO cotizaciones (numero_cotizacion, nombre_cliente, email, tipo_servicio, descripcion, precio, fecha) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -182,7 +166,6 @@ async def generar_cotizacion(
     conn.commit()
     conn.close()
     
-    # Retornar respuesta JSON
     return JSONResponse({
         "numero_cotizacion": numero_cotizacion,
         "nombre_cliente": nombre_cliente,
