@@ -1,0 +1,6 @@
+# Entornos virtuales
+venv/
+.env
+*.pyc
+__pycache__/
+database.db

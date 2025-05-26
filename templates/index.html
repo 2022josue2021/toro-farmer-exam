@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Cotizaciones Legales</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚖️ Sistema de Cotizaciones Legales</h1>
+            <p>Soluciones jurídicas profesionales con tecnología avanzada</p>
+        </div>
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('nueva-cotizacion')">Nueva Cotización</button>
+            <button class="nav-tab" onclick="switchTab('historial')">Historial de Cotizaciones</button>
+        </div>
+        
+        <div class="tab-content">
+            <!-- Nueva Cotización -->
+            <div id="nueva-cotizacion" class="tab-panel active">
+                <form id="cotizacionForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="nombre_cliente">👤 Nombre del Cliente</label>
+                            <input type="text" id="nombre_cliente" name="nombre_cliente" class="form-control" placeholder="Ingrese el nombre completo" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">📧 Correo Electrónico</label>
+                            <input type="email" id="email" name="email" class="form-control" placeholder="ejemplo@correo.com" required>
+                        </div>
+                        
+                        <div class="form-group large">
+                            <label for="tipo_servicio">⚖️ Tipo de Servicio Legal</label>
+                            <select id="tipo_servicio" name="tipo_servicio" class="form-control" required>
+                                <option value="">Seleccione un servicio legal</option>
+                                <option value="Constitución de empresa">Constitución de empresa (S/ 1,500)</option>
+                                <option value="Defensa laboral">Defensa laboral (S/ 2,000)</option>
+                                <option value="Consultoría tributaria">Consultoría tributaria (S/ 800)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group large">
+                            <label for="descripcion">📝 Descripción Detallada del Caso</label>
+                            <textarea id="descripcion" name="descripcion" class="form-control" placeholder="Describa los detalles específicos de su caso legal, antecedentes relevantes y objetivos esperados..." required></textarea>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn">🚀 Generar Cotización Profesional</button>
+                </form>
+                
+                <div id="loading" class="loading hidden">
+                    <div class="spinner"></div>
+                    <p>Generando cotización personalizada con análisis IA...</p>
+                </div>
+                
+                <div id="success-message" class="success-message hidden">
+                    ✅ Cotización generada exitosamente y guardada en el historial
+                </div>
+                
+                <div id="resultado" class="resultado-card hidden">
+                    <div class="resultado-header">
+                        <h2>📋 Cotización Profesional</h2>
+                        <div id="numero-cotizacion" class="numero-cotizacion"></div>
+                    </div>
+                    <div id="cotizacionData"></div>
+                    
+                    <!-- Sección del Análisis IA -->
+                    <div id="analisisIA" class="analisis-ia">
+                        <h3>🤖 Análisis Inteligente del Caso</h3>
+                        <div id="analisisContent"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Historial -->
+            <div id="historial" class="tab-panel">
+                <div class="filter-section">
+                    <h3>🔍 Filtrar Cotizaciones</h3>
+                    <div class="filter-grid">
+                        <div class="form-group">
+                            <label for="filtro-servicio">Filtrar por Tipo de Servicio</label>
+                            <select id="filtro-servicio" class="form-control">
+                                <option value="">Todos los servicios</option>
+                                <option value="Constitución de empresa">Constitución de empresa</option>
+                                <option value="Defensa laboral">Defensa laboral</option>
+                                <option value="Consultoría tributaria">Consultoría tributaria</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-secondary" onclick="aplicarFiltros()">🔍 Filtrar</button>
+                    </div>
+                </div>
+                
+                <div id="historial-content">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📄</div>
+                        <h3>No hay cotizaciones aún</h3>
+                        <p>Las cotizaciones que generes aparecerán aquí</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array para almacenar cotizaciones obtenidas del servidor
+        let cotizaciones = [];
+
+        // Cambio de pestañas
+        function switchTab(tabId) {
+            // Ocultar todas las pestañas
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Mostrar la pestaña seleccionada
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Si es historial, cargar y mostrar las cotizaciones
+            if (tabId === 'historial') {
+                cargarCotizaciones().then(() => {
+                    mostrarHistorial();
+                });
+            }
+        }
+
+        // Cargar cotizaciones al iniciar la página
+        window.addEventListener('load', () => {
+            cargarCotizaciones();
+        });
+
+        // Función para limpiar el formulario
+        function limpiarFormulario() {
+            document.getElementById('cotizacionForm').reset();
+        }
+
+        // Función para mostrar mensaje de éxito
+        function mostrarExito() {
+            const successMsg = document.getElementById('success-message');
+            successMsg.classList.remove('hidden');
+            setTimeout(() => {
+                successMsg.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Función para obtener cotizaciones del servidor
+        async function cargarCotizaciones() {
+            try {
+                const response = await fetch('/api/cotizaciones');
+                if (response.ok) {
+                    cotizaciones = await response.json();
+                }
+            } catch (error) {
+                console.error('Error al cargar cotizaciones:', error);
+            }
+        }
+
+        // Manejo del formulario
+        document.getElementById('cotizacionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Mostrar loading
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('resultado').classList.add('hidden');
+            
+            try {
+                const formData = new FormData(this);
+                const response = await fetch('/generar-cotizacion', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error en el servidor');
+                }
+                
+                const data = await response.json();
+                
+                // Ocultar loading
+                document.getElementById('loading').classList.add('hidden');
+                
+                // Mostrar resultados
+                mostrarCotizacion(data);
+                
+                // Actualizar lista de cotizaciones
+                await cargarCotizaciones();
+                
+                // Limpiar formulario y mostrar mensaje de éxito
+                limpiarFormulario();
+                mostrarExito();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loading').classList.add('hidden');
+                alert('Error al generar la cotización. Por favor, intente nuevamente.');
+            }
+        });
+
+        function mostrarCotizacion(data) {
+            document.getElementById('numero-cotizacion').textContent = data.numero_cotizacion;
+            
+            // Información básica de la cotización
+            document.getElementById('cotizacionData').innerHTML = `
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Cliente</div>
+                        <div class="info-value">${data.nombre_cliente}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Email</div>
+                        <div class="info-value">${data.email}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Servicio</div>
+                        <div class="info-value">${data.tipo_servicio}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Fecha</div>
+                        <div class="info-value">${new Date(data.fecha).toLocaleDateString('es-PE')}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Precio Base</div>
+                        <div class="info-value">S/ ${data.precio_base.toLocaleString()}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Precio Final</div>
+                        <div class="info-value precio-destacado">S/ ${Math.round(data.precio_final).toLocaleString()}</div>
+                    </div>
+                </div>
+                
+                <div class="info-item large">
+                    <div class="info-label">Descripción del Caso</div>
+                    <div class="info-value">${data.descripcion}</div>
+                </div>
+            `;
+            
+            // Mostrar análisis de IA si está disponible
+            if (data.analisis_ia) {
+                const analisis = data.analisis_ia;
+                let serviciosAdicionales = '';
+                
+                if (analisis.servicios_adicionales && analisis.servicios_adicionales.length > 0) {
+                    serviciosAdicionales = analisis.servicios_adicionales.join(', ');
+                } else {
+                    serviciosAdicionales = 'Ninguno';
+                }
+                
+                document.getElementById('analisisContent').innerHTML = `
+                    <div class="analisis-grid">
+                        <div class="analisis-item">
+                            <div class="info-label">Complejidad del Caso</div>
+                            <div class="info-value">${analisis.complejidad || 'Media'}</div>
+                        </div>
+                        <div class="analisis-item">
+                            <div class="info-label">Ajuste de Precio</div>
+                            <div class="info-value">${analisis.ajuste_precio || 0}%</div>
+                        </div>
+                        <div class="analisis-item">
+                            <div class="info-label">Servicios Adicionales</div>
+                            <div class="info-value">${serviciosAdicionales}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="propuesta-texto">
+                        <div class="info-label">Propuesta Personalizada</div>
+                        <div class="info-value">${analisis.propuesta_texto || 'Propuesta generada automáticamente'}</div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('analisisContent').innerHTML = `
+                    <div class="propuesta-texto">
+                        <div class="info-value">Análisis en proceso... La IA está evaluando su caso.</div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('resultado').classList.remove('hidden');
+        }
+
+        function mostrarHistorial() {
+            const historialContent = document.getElementById('historial-content');
+            
+            if (cotizaciones.length === 0) {
+                historialContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📄</div>
+                        <h3>No hay cotizaciones aún</h3>
+                        <p>Las cotizaciones que generes aparecerán aquí</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="historial-grid">';
+            cotizaciones.forEach(cotizacion => {
+                const fecha = new Date(cotizacion.fecha).toLocaleDateString('es-PE');
+                html += `
+                    <div class="cotizacion-card" data-servicio="${cotizacion.tipo_servicio}">
+                        <div class="resultado-header">
+                            <h3>${cotizacion.numero_cotizacion}</h3>
+                            <div class="numero-cotizacion">${fecha}</div>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Cliente</div>
+                                <div class="info-value">${cotizacion.nombre_cliente}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Email</div>
+                                <div class="info-value">${cotizacion.email}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Servicio</div>
+                                <div class="info-value">${cotizacion.tipo_servicio}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Precio Final</div>
+                                <div class="info-value precio-destacado">S/ ${Math.round(cotizacion.precio).toLocaleString()}</div>
+                            </div>
+                        </div>
+                        <div class="info-item" style="margin-top: 15px;">
+                            <div class="info-label">Descripción</div>
+                            <div class="info-value">${cotizacion.descripcion}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            historialContent.innerHTML = html;
+        }
+
+        function aplicarFiltros() {
+            const filtroServicio = document.getElementById('filtro-servicio').value;
+            const cotizacionCards = document.querySelectorAll('.cotizacion-card');
+            
+            cotizacionCards.forEach(card => {
+                const servicioCard = card.getAttribute('data-servicio');
+                if (filtroServicio === '' || servicioCard === filtroServicio) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
