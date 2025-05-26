@@ -22,7 +22,6 @@ if not openai.api_key:
     3. Verifica que el archivo no tenga extensión .txt
     """)
 
-# 4. Solo después inicializar FastAPI
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -116,7 +115,6 @@ def analizar_con_ia(descripcion, tipo_servicio):
             max_tokens=500
         )
         
-        # Parsear la respuesta correctamente
         content = response.choices[0].message.content
         try:
             json_start = content.find('{')
