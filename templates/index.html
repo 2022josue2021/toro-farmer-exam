@@ -67,7 +67,6 @@
                     </div>
                     <div id="cotizacionData"></div>
                     
-                    <!-- Sección del Análisis IA -->
                     <div id="analisisIA" class="analisis-ia">
                         <h3>🤖 Análisis Inteligente del Caso</h3>
                         <div id="analisisContent"></div>
@@ -75,7 +74,6 @@
                 </div>
             </div>
             
-            <!-- Historial -->
             <div id="historial" class="tab-panel">
                 <div class="filter-section">
                     <h3>🔍 Filtrar Cotizaciones</h3>
@@ -115,7 +113,6 @@
                 tab.classList.remove('active');
             });
             
-            // Mostrar la pestaña seleccionada
             document.getElementById(tabId).classList.add('active');
             event.target.classList.add('active');
             
@@ -130,7 +127,6 @@
             cargarCotizaciones();
         });
 
-        // Función para limpiar el formulario
         function limpiarFormulario() {
             document.getElementById('cotizacionForm').reset();
         }
@@ -157,7 +153,6 @@
         document.getElementById('cotizacionForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Mostrar loading
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('resultado').classList.add('hidden');
             
